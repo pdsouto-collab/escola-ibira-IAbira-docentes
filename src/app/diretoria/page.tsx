@@ -54,9 +54,14 @@ export default function DirectorDashboard() {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-white border-b border-[#e3d8c8] flex items-center px-10 shadow-sm">
-          <h1 className="text-2xl font-semibold text-[#4a5d4e]">Fluxo de Governança</h1>
-        </header>
+        <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
+        <h1 className="text-2xl font-bold text-[#2A4B3A]">Portal da Diretoria</h1>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={() => window.location.href = '/diretoria/conhecimento'}>Alimentar IA (Conhecimento)</Button>
+          <Button variant="outline" onClick={() => window.location.href = '/biblioteca'}>Biblioteca de Vivências</Button>
+          <Button variant="outline" onClick={() => window.location.href = '/'}>Sair / Voltar</Button>
+        </div>
+      </header>
         
         <main className="flex-1 p-10 overflow-y-auto flex gap-10">
           {/* LISTA */}

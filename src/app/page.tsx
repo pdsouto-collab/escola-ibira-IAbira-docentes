@@ -47,7 +47,13 @@ export default function EducatorPortal() {
             <Leaf size={20} />
           </div>
           <div>
-            <h1 className="font-bold text-[#4a5d4e] text-lg">O Escutador</h1>
+            <header className="flex justify-between items-center">
+              <h1 className="font-bold text-[#4a5d4e] text-lg">O Escutador</h1>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/biblioteca'}>Biblioteca</Button>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/diretoria'}>Diretoria</Button>
+              </div>
+            </header>
             <p className="text-xs text-[#7c8b80]">Briefing Dinâmico e Intencionalidade</p>
           </div>
         </div>
