@@ -54,7 +54,7 @@ export default function ConhecimentoPage() {
     <div className="container mx-auto p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-[#2A4B3A]">Repositório de Conhecimento</h1>
-        <Button variant="outline" onClick={() => window.location.href = '/diretoria'}>Voltar</Button>
+        <Button className="bg-white border border-[#4a5d4e] text-[#4a5d4e] hover:bg-[#f2efe9] shadow-sm transition-all" onClick={() => window.location.href = '/diretoria'}>Voltar</Button>
       </div>
 
       <Card className="max-w-2xl mx-auto border-[#E8F3EB] shadow-lg">

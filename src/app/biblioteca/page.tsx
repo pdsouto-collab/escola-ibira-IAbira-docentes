@@ -45,9 +45,9 @@ export default function BibliotecaPage() {
     <div className="min-h-screen bg-[#F8FBF9]">
       <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
         <h1 className="text-2xl font-bold text-[#2A4B3A]">Biblioteca de Vivências</h1>
-        <div className="flex gap-4">
-          <Button variant="outline" onClick={() => window.location.href = '/'}>Painel do Educador</Button>
-          <Button variant="outline" onClick={() => window.location.href = '/diretoria'}>Painel da Diretoria</Button>
+        <div className="flex gap-3">
+          <Button className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white shadow-sm transition-all" onClick={() => window.location.href = '/'}>Painel do Educador</Button>
+          <Button className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-sm transition-all" onClick={() => window.location.href = '/diretoria'}>Painel da Diretoria</Button>
         </div>
       </header>
 
