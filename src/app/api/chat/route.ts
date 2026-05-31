@@ -1,6 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { streamText } from 'ai';
 import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 // Permitir streaming de respostas em tempo real para "O Escutador"
 export const maxDuration = 30;
@@ -19,40 +20,46 @@ Faça perguntas curtas e diretas, uma por vez, sobre:
 Seja acolhedor, baseie-se em uma abordagem de autonomia (como Pikler ou Antroposofia de forma sutil).
 Quando você sentir que tem informações suficientes, encerre a conversa pedindo para a educadora aguardar enquanto "O Criador" elabora a proposta.`;
 
-  const result = await streamText({
-    model: anthropic('claude-3-5-sonnet-latest'),
-    messages,
-    system: systemPrompt,
-    async onFinish({ text }) {
-      if (sessionId) {
-        // Garante que a sessão exista no banco para não dar erro de chave estrangeira
-        await prisma.pedagogicalSession.upsert({
-          where: { id: sessionId },
-          create: { 
-            id: sessionId, 
-            status: "BRIEFING",
-            educador: {
-              connectOrCreate: {
-                where: { email: 'mock@ibira.com' },
-                create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+  try {
+    const result = await streamText({
+      model: anthropic('claude-3-5-sonnet-latest'),
+      messages,
+      system: systemPrompt,
+      async onFinish({ text }) {
+        if (sessionId) {
+          // Garante que a sessão exista no banco para não dar erro de chave estrangeira
+          await prisma.pedagogicalSession.upsert({
+            where: { id: sessionId },
+            create: { 
+              id: sessionId, 
+              status: "BRIEFING",
+              educador: {
+                connectOrCreate: {
+                  where: { email: 'mock@ibira.com' },
+                  create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+                }
               }
-            }
-          },
-          update: {}
-        });
+            },
+            update: {}
+          });
 
-        // Log da interação do Escutador no banco de dados
-        await prisma.agentLog.create({
-          data: {
-            sessionId: sessionId,
-            agentName: 'ESCUTADOR',
-            input: messages[messages.length - 1].content,
-            output: text,
-          },
-        });
-      }
-    },
-  });
+          // Log da interação do Escutador no banco de dados
+          await prisma.agentLog.create({
+            data: {
+              sessionId: sessionId,
+              agentName: 'ESCUTADOR',
+              input: messages[messages.length - 1].content,
+              output: text,
+            },
+          });
+        }
+      },
+    });
 
-  return result.toDataStreamResponse();
+    return result.toDataStreamResponse();
+  } catch (error: any) {
+    console.error("DEU ERRO NO SERVIDOR:", error);
+    // Retorna o erro exato para a interface mostrar
+    return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
+  }
 }
