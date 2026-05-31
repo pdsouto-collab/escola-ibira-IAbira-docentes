@@ -22,7 +22,7 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
 
   try {
     const result = await streamText({
-      model: anthropic('claude-3-haiku-20240307'),
+      model: anthropic('claude-3-5-sonnet-20240620'),
       messages,
       system: systemPrompt,
       async onFinish({ text }) {
