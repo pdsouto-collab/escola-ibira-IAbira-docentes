@@ -38,5 +38,5 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
     },
   });
 
-  return result.toTextStreamResponse();
+  return result.toDataStreamResponse();
 }
