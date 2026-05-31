@@ -1,0 +1,86 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+enum Role {
+  EDUCADOR
+  DIRETOR
+  ADMIN
+}
+
+enum SessionStatus {
+  BRIEFING
+  GERADO
+  REVISADO
+  AGUARDANDO_DIRETORIA
+  APROVADO
+}
+
+enum DocumentType {
+  PPP
+  BNCC
+  PIKLER
+  ESPACO_FISICO
+}
+
+model User {
+  id                   String               @id @default(uuid())
+  nome                 String
+  email                String               @unique
+  role                 Role                 @default(EDUCADOR)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  pedagogicalSessions  PedagogicalSession[]
+}
+
+model KnowledgeBaseEmbedding {
+  id        String       @id @default(uuid())
+  content   String
+  embedding Unsupported("vector(1536)")
+  metadata  DocumentType
+  createdAt DateTime     @default(now())
+}
+
+model PedagogicalSession {
+  id                        String        @id @default(uuid())
+  educadorId                String
+  educador                  User          @relation(fields: [educadorId], references: [id])
+  status                    SessionStatus @default(BRIEFING)
+  tema                      String?
+  faixaEtaria               String?
+  cicloNatureza             String?
+  requiresDirectorApproval  Boolean       @default(false)
+  directorFeedback          String?
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+
+  agentLogs                 AgentLog[]
+  finalContent              FinalContent?
+}
+
+model AgentLog {
+  id                   String             @id @default(uuid())
+  sessionId            String
+  session              PedagogicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  agentName            String
+  input                String
+  output               String
+  createdAt            DateTime           @default(now())
+}
+
+model FinalContent {
+  id                   String             @id @default(uuid())
+  sessionId            String             @unique
+  session              PedagogicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  content              String
+  version              Int                @default(1)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}

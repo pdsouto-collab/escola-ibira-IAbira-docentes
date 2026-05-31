@@ -1,0 +1,42 @@
+import { anthropic } from '@ai-sdk/anthropic';
+import { streamText } from 'ai';
+import prisma from '@/lib/prisma';
+
+// Permitir streaming de respostas em tempo real para "O Escutador"
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+  const { messages, sessionId } = await req.json();
+
+  // Prompt do Escutador (Agente 1)
+  const systemPrompt = `Você é "O Escutador", um agente empático e pedagógico da Escola Ibirá.
+Seu objetivo é conversar com a educadora para extrair o "Sumário de Intencionalidade Pedagógica".
+Faça perguntas curtas e diretas, uma por vez, sobre:
+1. O tema de interesse manifestado pelas crianças na semana.
+2. A faixa etária (ciclo).
+3. O ciclo da natureza atual e como ele pode ser explorado.
+
+Seja acolhedor, baseie-se em uma abordagem de autonomia (como Pikler ou Antroposofia de forma sutil).
+Quando você sentir que tem informações suficientes, encerre a conversa pedindo para a educadora aguardar enquanto "O Criador" elabora a proposta.`;
+
+  const result = await streamText({
+    model: anthropic('claude-3-5-sonnet-latest'),
+    messages,
+    system: systemPrompt,
+    async onFinish({ text }) {
+      if (sessionId) {
+        // Log da interação do Escutador no banco de dados
+        await prisma.agentLog.create({
+          data: {
+            sessionId: sessionId,
+            agentName: 'ESCUTADOR',
+            input: messages[messages.length - 1].content,
+            output: text,
+          },
+        });
+      }
+    },
+  });
+
+  return result.toTextStreamResponse();
+}
