@@ -25,6 +25,13 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
     system: systemPrompt,
     async onFinish({ text }) {
       if (sessionId) {
+        // Garante que a sessão exista no banco para não dar erro de chave estrangeira
+        await prisma.pedagogicalSession.upsert({
+          where: { id: sessionId },
+          create: { id: sessionId, title: "Vivência Não Nomeada", status: "RASCUNHO" },
+          update: {}
+        });
+
         // Log da interação do Escutador no banco de dados
         await prisma.agentLog.create({
           data: {
