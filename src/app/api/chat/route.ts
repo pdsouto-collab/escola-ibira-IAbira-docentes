@@ -28,31 +28,35 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
       async onFinish({ text }) {
         if (sessionId) {
           try {
-            // Garante que a sessão exista no banco para não dar erro de chave estrangeira
-            await prisma.pedagogicalSession.upsert({
-              where: { id: sessionId },
-              create: { 
-                id: sessionId, 
-                status: "BRIEFING",
-                educador: {
-                  connectOrCreate: {
-                    where: { email: 'mock@ibira.com' },
-                    create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-                  }
-                }
-              },
-              update: {}
-            });
+            // Garante que o banco de dados não trave o fechamento do stream (Timeout de 5 segundos)
+            await Promise.race([
+              (async () => {
+                await prisma.pedagogicalSession.upsert({
+                  where: { id: sessionId },
+                  create: { 
+                    id: sessionId, 
+                    status: "BRIEFING",
+                    educador: {
+                      connectOrCreate: {
+                        where: { email: 'mock@ibira.com' },
+                        create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+                      }
+                    }
+                  },
+                  update: {}
+                });
 
-            // Log da interação do Escutador no banco de dados
-            await prisma.agentLog.create({
-              data: {
-                sessionId: sessionId,
-                agentName: 'ESCUTADOR',
-                input: messages[messages.length - 1].content,
-                output: text,
-              },
-            });
+                await prisma.agentLog.create({
+                  data: {
+                    sessionId: sessionId,
+                    agentName: 'ESCUTADOR',
+                    input: messages[messages.length - 1].content,
+                    output: text,
+                  },
+                });
+              })(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Prisma timeout exceeding 5s")), 5000))
+            ]);
           } catch (dbError) {
             console.error("ERRO AO SALVAR NO BANCO DE DADOS (Prisma):", dbError);
           }
