@@ -27,31 +27,35 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
       system: systemPrompt,
       async onFinish({ text }) {
         if (sessionId) {
-          // Garante que a sessão exista no banco para não dar erro de chave estrangeira
-          await prisma.pedagogicalSession.upsert({
-            where: { id: sessionId },
-            create: { 
-              id: sessionId, 
-              status: "BRIEFING",
-              educador: {
-                connectOrCreate: {
-                  where: { email: 'mock@ibira.com' },
-                  create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+          try {
+            // Garante que a sessão exista no banco para não dar erro de chave estrangeira
+            await prisma.pedagogicalSession.upsert({
+              where: { id: sessionId },
+              create: { 
+                id: sessionId, 
+                status: "BRIEFING",
+                educador: {
+                  connectOrCreate: {
+                    where: { email: 'mock@ibira.com' },
+                    create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+                  }
                 }
-              }
-            },
-            update: {}
-          });
+              },
+              update: {}
+            });
 
-          // Log da interação do Escutador no banco de dados
-          await prisma.agentLog.create({
-            data: {
-              sessionId: sessionId,
-              agentName: 'ESCUTADOR',
-              input: messages[messages.length - 1].content,
-              output: text,
-            },
-          });
+            // Log da interação do Escutador no banco de dados
+            await prisma.agentLog.create({
+              data: {
+                sessionId: sessionId,
+                agentName: 'ESCUTADOR',
+                input: messages[messages.length - 1].content,
+                output: text,
+              },
+            });
+          } catch (dbError) {
+            console.error("ERRO AO SALVAR NO BANCO DE DADOS (Prisma):", dbError);
+          }
         }
       },
     });
