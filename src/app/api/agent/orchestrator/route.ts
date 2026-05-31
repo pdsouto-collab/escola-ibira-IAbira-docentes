@@ -52,7 +52,7 @@ Gere uma proposta dividida estritamente nas seguintes seções (use Markdown):
 Foque em experiências sensoriais, não gere planilhas ou atividades tradicionais escolares.`;
 
     const creatorResult = await generateText({
-      model: anthropic('claude-3-5-sonnet-20240620'),
+      model: anthropic('claude-3-5-sonnet-20241022'),
       prompt: creatorPrompt,
     });
 
@@ -77,7 +77,7 @@ ${creatorResult.text}
 Retorne apenas a proposta final polida em Markdown.`;
 
     const reviewerResult = await generateText({
-      model: anthropic('claude-3-5-sonnet-20240620'),
+      model: anthropic('claude-3-5-sonnet-20241022'),
       prompt: reviewerPrompt,
     });
 
