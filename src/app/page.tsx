@@ -46,15 +46,15 @@ export default function EducatorPortal() {
           <div className="w-10 h-10 rounded-full bg-[#8fb39c] flex items-center justify-center text-white">
             <Leaf size={20} />
           </div>
-          <div>
-            <header className="flex justify-between items-center">
+          <div className="flex-1">
+            <header className="flex flex-wrap justify-between items-center gap-2">
               <h1 className="font-bold text-[#4a5d4e] text-lg">O Escutador</h1>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Button className="bg-[#e8a375] hover:bg-[#d49164] text-white shadow-sm transition-all" size="sm" onClick={() => window.location.href = '/biblioteca'}>Biblioteca</Button>
                 <Button className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white shadow-sm transition-all" size="sm" onClick={() => window.location.href = '/diretoria'}>Diretoria</Button>
               </div>
             </header>
-            <p className="text-xs text-[#7c8b80]">Briefing Dinâmico e Intencionalidade</p>
+            <p className="text-xs text-[#7c8b80] mt-1">Briefing Dinâmico e Intencionalidade</p>
           </div>
         </div>
 
