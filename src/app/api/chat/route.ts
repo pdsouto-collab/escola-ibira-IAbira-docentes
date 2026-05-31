@@ -28,7 +28,16 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
         // Garante que a sessão exista no banco para não dar erro de chave estrangeira
         await prisma.pedagogicalSession.upsert({
           where: { id: sessionId },
-          create: { id: sessionId, title: "Vivência Não Nomeada", status: "RASCUNHO" },
+          create: { 
+            id: sessionId, 
+            status: "BRIEFING",
+            educador: {
+              connectOrCreate: {
+                where: { email: 'mock@ibira.com' },
+                create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+              }
+            }
+          },
           update: {}
         });
 
