@@ -10,7 +10,7 @@ import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function EducatorPortal() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: "/api/chat",
     body: { sessionId: "temp-session-123" } // Em produção, este ID virá do banco/auth
   });
@@ -79,6 +79,11 @@ export default function EducatorPortal() {
               <div className="text-xs text-[#8fb39c] self-start ml-2 flex items-center gap-2">
                 <Sparkles size={12} className="animate-pulse" />
                 O Escutador está refletindo...
+              </div>
+            )}
+            {error && (
+              <div className="bg-red-100 text-red-600 p-3 rounded-2xl max-w-[85%] text-sm self-start">
+                <strong>Erro:</strong> Não foi possível conectar. Detalhes: {error.message || "Erro desconhecido"}
               </div>
             )}
           </div>
