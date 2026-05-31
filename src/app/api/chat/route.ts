@@ -28,35 +28,16 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
       async onFinish({ text }) {
         if (sessionId) {
           try {
-            // Garante que o banco de dados não trave o fechamento do stream (Timeout de 5 segundos)
+            // TEMPORARILY DISABLED PRISMA TO ISOLATE ERROR
+            /*
             await Promise.race([
               (async () => {
-                await prisma.pedagogicalSession.upsert({
-                  where: { id: sessionId },
-                  create: { 
-                    id: sessionId, 
-                    status: "BRIEFING",
-                    educador: {
-                      connectOrCreate: {
-                        where: { email: 'mock@ibira.com' },
-                        create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-                      }
-                    }
-                  },
-                  update: {}
-                });
-
-                await prisma.agentLog.create({
-                  data: {
-                    sessionId: sessionId,
-                    agentName: 'ESCUTADOR',
-                    input: messages[messages.length - 1].content,
-                    output: text,
-                  },
-                });
-              })(),
+                await prisma.pedagogicalSession.upsert({ ... });
+                await prisma.agentLog.create({ ... });
+              })().catch(e => console.error(e)),
               new Promise((_, reject) => setTimeout(() => reject(new Error("Prisma timeout exceeding 5s")), 5000))
             ]);
+            */
           } catch (dbError) {
             console.error("ERRO AO SALVAR NO BANCO DE DADOS (Prisma):", dbError);
           }
