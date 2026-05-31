@@ -22,27 +22,42 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
 
   try {
     const result = await streamText({
-      model: anthropic('claude-sonnet-4-6'),
+      model: anthropic('claude-3-5-sonnet-20241022'),
       messages,
       system: systemPrompt,
       async onFinish({ text }) {
         if (sessionId) {
           try {
-            // TEMPORARILY DISABLED PRISMA TO ISOLATE ERROR
-            /*
-            await Promise.race([
-              (async () => {
-                await prisma.pedagogicalSession.upsert({ ... });
-                await prisma.agentLog.create({ ... });
-              })().catch(e => console.error(e)),
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Prisma timeout exceeding 5s")), 5000))
-            ]);
-            */
-          } catch (dbError) {
-            console.error("ERRO AO SALVAR NO BANCO DE DADOS (Prisma):", dbError);
-          }
-        }
-      },
+            // Salva as mensagens no banco em background para não travar a resposta
+            (async () => {
+              try {
+                await prisma.pedagogicalSession.upsert({
+                  where: { id: sessionId },
+                  create: { 
+                    id: sessionId, 
+                    status: "BRIEFING",
+                    educador: {
+                      connectOrCreate: {
+                        where: { email: 'mock@ibira.com' },
+                        create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+                      }
+                    }
+                  },
+                  update: {}
+                });
+
+                await prisma.agentLog.create({
+                  data: {
+                    sessionId: sessionId,
+                    agentName: 'ESCUTADOR',
+                    input: messages[messages.length - 1].content,
+                    output: text,
+                  },
+                });
+              } catch (bgError) {
+                console.error("ERRO AO SALVAR NO BANCO DE DADOS EM BACKGROUND:", bgError);
+              }
+            })();
     });
 
     return result.toDataStreamResponse();
