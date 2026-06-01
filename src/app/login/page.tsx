@@ -59,9 +59,8 @@ function LoginForm() {
         <img 
           src="/iabira_docentes_logo.png" 
           alt="Escola Ibirá Logo" 
-          className="h-24 w-auto object-contain mb-3"
+          className="h-44 w-auto object-contain mb-4"
         />
-        <h1 className="text-2xl font-bold text-[#2A4B3A] tracking-tight">IAbira Docentes</h1>
         <p className="text-xs text-[#7c8b80] mt-1 flex items-center gap-1">
           <Leaf size={12} className="text-[#8fb39c]" /> Portal de Inteligência Pedagógica
         </p>
@@ -126,24 +125,7 @@ function LoginForm() {
         </Button>
       </form>
 
-      {/* Demo Credentials Helper */}
-      <div className="mt-8 border-t border-[#f2efe9] pt-6 w-full text-center">
-        <p className="text-[11px] font-bold text-[#e8a375] uppercase tracking-wider mb-3">Acessos para Teste (Seed automático)</p>
-        <div className="grid grid-cols-1 gap-2 text-left bg-[#fcfaf7] border border-[#e3d8c8]/40 p-3 rounded-2xl text-[10px] text-gray-600">
-          <div>
-            <span className="font-bold text-[#4a5d4e] block">👩‍🏫 Professora:</span>
-            <span className="text-gray-500">professora@ibira.com</span> / <span className="text-gray-400 font-mono">professora123</span>
-          </div>
-          <div className="border-t border-[#f2efe9]/60 pt-2">
-            <span className="font-bold text-[#4a5d4e] block">💼 Diretora Pedagógica:</span>
-            <span className="text-gray-500">diretora@ibira.com</span> / <span className="text-gray-400 font-mono">diretora123</span>
-          </div>
-          <div className="border-t border-[#f2efe9]/60 pt-2">
-            <span className="font-bold text-[#4a5d4e] block">🛠️ Administrador:</span>
-            <span className="text-gray-500">admin@ibira.com</span> / <span className="text-gray-400 font-mono">admin123</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
