@@ -10,6 +10,7 @@ export async function GET() {
       include: {
         educador: true,
         finalContent: true,
+        classifications: true,
       },
       orderBy: {
         updatedAt: 'desc',
@@ -29,6 +30,7 @@ export async function GET() {
       }),
       content: session.finalContent?.content || '',
       requiresDirectorApproval: session.requiresDirectorApproval,
+      classifications: session.classifications.map(c => ({ year: c.year, subcategory: c.subcategory }))
     }));
 
     return NextResponse.json(formattedSessions);

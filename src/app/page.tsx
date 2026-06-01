@@ -21,8 +21,37 @@ export default function EducatorPortal() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
+  // Estados de classificação e Tema
+  const [tema, setTema] = useState("");
+  const [classifications, setClassifications] = useState<{ year: string; subcategory: string }[]>([]);
+  const [selectedYear, setSelectedYear] = useState("Infantil");
+  const [selectedSub, setSelectedSub] = useState("Artes");
+
+  const faixasAnos = ["Infantil", "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
+  const subCategories = ["Artes", "Ciências", "Educação Física", "Geografia", "História", "Língua Portuguesa", "Matemática", "Música"];
+
+  const handleAddClassification = () => {
+    const exists = classifications.some(c => c.year === selectedYear && c.subcategory === selectedSub);
+    if (!exists) {
+      setClassifications([...classifications, { year: selectedYear, subcategory: selectedSub }]);
+    }
+  };
+
+  const handleRemoveClassification = (index: number) => {
+    setClassifications(classifications.filter((_, idx) => idx !== index));
+  };
+
   const handleSave = async (action: "draft" | "approve") => {
     if (!finalContent) return;
+    if (!tema.trim()) {
+      alert("Por favor, preencha o Tema/Título da vivência antes de salvar.");
+      return;
+    }
+    if (classifications.length === 0) {
+      alert("Por favor, adicione pelo menos uma classificação de ano/sub-categoria.");
+      return;
+    }
+
     if (action === "draft") setIsSavingDraft(true);
     else setIsSubmittingApproval(true);
     setOrchestratorError(null);
@@ -35,6 +64,8 @@ export default function EducatorPortal() {
           sessionId: "temp-session-123",
           content: finalContent,
           action,
+          tema,
+          classifications,
         }),
       });
 
@@ -62,6 +93,8 @@ export default function EducatorPortal() {
     setIsOrchestrating(true);
     setOrchestratorError(null);
     setFinalContent("");
+    setTema("");
+    setClassifications([]);
     try {
       const res = await fetch("/api/agent/orchestrator", {
         method: "POST",
@@ -219,10 +252,81 @@ export default function EducatorPortal() {
             </div>
           )}
           {finalContent ? (
-            <div className="max-w-3xl mx-auto bg-white p-12 rounded-xl shadow-sm border border-[#e3d8c8] min-h-full">
-              {/* Se o educador quiser editar, um Textarea rico pode ser integrado aqui (ex: TipTap). Para mock, usamos react-markdown no view. */}
-              <div className="prose prose-stone max-w-none prose-headings:text-[#4a5d4e] prose-h2:border-b-2 prose-h2:border-[#f2efe9] prose-h2:pb-2 prose-p:text-gray-700 prose-li:text-gray-700">
-                <ReactMarkdown>{finalContent}</ReactMarkdown>
+            <div className="max-w-3xl mx-auto flex flex-col gap-6">
+              {/* Card de Configuração */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e3d8c8]">
+                <h3 className="text-md font-bold text-[#4a5d4e] mb-4">Configuração da Vivência</h3>
+                
+                <div className="grid grid-cols-1 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Tema / Título da Vivência</label>
+                    <Input 
+                      value={tema}
+                      onChange={(e) => setTema(e.target.value)}
+                      placeholder="Digite o título da vivência..."
+                      className="bg-[#fcfaf7] border-[#e3d8c8] focus-visible:ring-[#8fb39c]"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-[#f2efe9] pt-4">
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">Classificar por Ano e Sub-categoria</label>
+                  <div className="flex gap-2 mb-3">
+                    <div className="flex-1">
+                      <select 
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(e.target.value)}
+                        className="w-full border border-[#e3d8c8] rounded-md p-2 bg-[#fcfaf7] text-sm focus:outline-none focus:ring-2 focus:ring-[#8fb39c]"
+                      >
+                        {faixasAnos.map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <select 
+                        value={selectedSub}
+                        onChange={(e) => setSelectedSub(e.target.value)}
+                        className="w-full border border-[#e3d8c8] rounded-md p-2 bg-[#fcfaf7] text-sm focus:outline-none focus:ring-2 focus:ring-[#8fb39c]"
+                      >
+                        {subCategories.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <Button 
+                      type="button"
+                      onClick={handleAddClassification}
+                      className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white text-sm"
+                    >
+                      Adicionar
+                    </Button>
+                  </div>
+
+                  {/* Classificações Adicionadas */}
+                  <div className="flex flex-wrap gap-2">
+                    {classifications.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">Nenhuma classificação adicionada ainda.</p>
+                    ) : (
+                      classifications.map((c, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 bg-[#f2efe9] text-[#4a5d4e] px-2.5 py-1 rounded-full text-xs font-medium border border-[#e3d8c8]">
+                          {c.year} • {c.subcategory}
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveClassification(idx)}
+                            className="text-red-500 hover:text-red-700 font-bold ml-1"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Documento Markdown */}
+              <div className="bg-white p-12 rounded-xl shadow-sm border border-[#e3d8c8] min-h-full">
+                {/* Se o educador quiser editar, um Textarea rico pode ser integrado aqui (ex: TipTap). Para mock, usamos react-markdown no view. */}
+                <div className="prose prose-stone max-w-none prose-headings:text-[#4a5d4e] prose-h2:border-b-2 prose-h2:border-[#f2efe9] prose-h2:pb-2 prose-p:text-gray-700 prose-li:text-gray-700">
+                  <ReactMarkdown>{finalContent}</ReactMarkdown>
+                </div>
               </div>
             </div>
           ) : (

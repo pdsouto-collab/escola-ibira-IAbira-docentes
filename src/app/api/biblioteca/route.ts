@@ -4,20 +4,28 @@ import prisma from '@/lib/prisma';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const faixaEtaria = searchParams.get('faixaEtaria');
+    const year = searchParams.get('year');
+    const subcategory = searchParams.get('subcategory');
 
     const whereClause: any = {
       status: 'APROVADO',
     };
 
-    if (faixaEtaria && faixaEtaria !== 'TODAS') {
-      whereClause.faixaEtaria = faixaEtaria;
+    // Filtra através das relações se houver filtro selecionado
+    if ((year && year !== 'TODAS') || (subcategory && subcategory !== 'TODAS')) {
+      whereClause.classifications = {
+        some: {
+          ...(year && year !== 'TODAS' ? { year } : {}),
+          ...(subcategory && subcategory !== 'TODAS' ? { subcategory } : {})
+        }
+      };
     }
 
     const sessions = await prisma.pedagogicalSession.findMany({
       where: whereClause,
       include: {
         finalContent: true,
+        classifications: true,
         educador: {
           select: { nome: true }
         }

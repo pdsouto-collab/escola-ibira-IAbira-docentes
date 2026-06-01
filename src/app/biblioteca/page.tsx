@@ -14,24 +14,27 @@ type Session = {
   educador: { nome: string };
   finalContent: { content: string } | null;
   updatedAt: string;
+  classifications: { year: string; subcategory: string }[];
 };
 
 export default function BibliotecaPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [faixaFiltro, setFaixaFiltro] = useState('TODAS');
+  const [yearFilter, setYearFilter] = useState('TODAS');
+  const [subFilter, setSubFilter] = useState('TODAS');
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
-  const faixas = ['TODAS', 'Infantil', '1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano'];
+  const faixasAnos = ["TODAS", "Infantil", "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
+  const subCategories = ["TODAS", "Artes", "Ciências", "Educação Física", "Geografia", "História", "Língua Portuguesa", "Matemática", "Música"];
 
   useEffect(() => {
     fetchSessions();
-  }, [faixaFiltro]);
+  }, [yearFilter, subFilter]);
 
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/biblioteca?faixaEtaria=${faixaFiltro}`);
+      const res = await fetch(`/api/biblioteca?year=${yearFilter}&subcategory=${subFilter}`);
       const data = await res.json();
       setSessions(data.sessions || []);
     } catch (error) {
@@ -54,17 +57,31 @@ export default function BibliotecaPage() {
       <main className="container mx-auto p-6 flex gap-6 h-[calc(100vh-80px)]">
         {/* Menu Lateral de Filtros e Lista */}
         <div className="w-1/3 flex flex-col gap-4 border-r pr-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Filtrar por Faixa Etária</label>
-            <select 
-              className="w-full border rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59]"
-              value={faixaFiltro}
-              onChange={(e) => setFaixaFiltro(e.target.value)}
-            >
-              {faixas.map(f => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Filtrar por Ano</label>
+              <select 
+                className="w-full border rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] text-xs"
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+              >
+                {faixasAnos.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Filtrar por Categoria</label>
+              <select 
+                className="w-full border rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] text-xs"
+                value={subFilter}
+                onChange={(e) => setSubFilter(e.target.value)}
+              >
+                {subCategories.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <ScrollArea className="flex-1 bg-white rounded-md border p-2 shadow-inner">
@@ -81,9 +98,15 @@ export default function BibliotecaPage() {
                     onClick={() => setSelectedSession(s)}
                   >
                     <CardHeader className="p-4">
-                      <CardTitle className="text-md text-[#2A4B3A]">{s.tema || 'Sem Tema Definido'}</CardTitle>
+                      <CardTitle className="text-sm font-bold text-[#2A4B3A]">{s.tema || 'Sem Tema Definido'}</CardTitle>
                       <CardDescription className="text-xs">
-                        {s.faixaEtaria} • {s.cicloNatureza} <br/>
+                        <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                          {s.classifications && s.classifications.map((c, idx) => (
+                            <span key={idx} className="bg-[#f2efe9] text-[#4a5d4e] px-2 py-0.5 rounded text-[10px] font-medium border border-gray-200">
+                              {c.year} • {c.subcategory}
+                            </span>
+                          ))}
+                        </div>
                         Por: {s.educador.nome}
                       </CardDescription>
                     </CardHeader>
@@ -100,9 +123,16 @@ export default function BibliotecaPage() {
             <>
               <div className="bg-[#E8F3EB] p-4 border-b">
                 <h2 className="text-xl font-bold text-[#2A4B3A]">{selectedSession.tema}</h2>
-                <p className="text-sm text-gray-600">Criado por {selectedSession.educador.nome} | Atualizado em {new Date(selectedSession.updatedAt).toLocaleDateString('pt-BR')}</p>
+                <div className="flex flex-wrap gap-1.5 my-2">
+                  {selectedSession.classifications && selectedSession.classifications.map((c, idx) => (
+                    <span key={idx} className="bg-[#4a5d4e] text-white px-2 py-0.5 rounded text-[11px] font-medium">
+                      {c.year} • {c.subcategory}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600">Criado por {selectedSession.educador.nome} | Atualizado em {new Date(selectedSession.updatedAt).toLocaleDateString('pt-BR')}</p>
               </div>
-              <ScrollArea className="flex-1 p-8 prose prose-emerald max-w-none">
+              <ScrollArea className="flex-1 p-8 prose prose-stone max-w-none prose-headings:text-[#2A4B3A] prose-h2:border-b-2 prose-h2:pb-2">
                 {selectedSession.finalContent?.content ? (
                   <ReactMarkdown>{selectedSession.finalContent.content}</ReactMarkdown>
                 ) : (

@@ -147,7 +147,18 @@ export default function DirectorDashboard() {
                     <span className="font-bold text-[#4a5d4e]">{s.educator}</span>
                     <span className="text-xs text-[#7c8b80] bg-[#f2efe9] px-2 py-1 rounded-md">{s.date}</span>
                   </div>
-                  <p className="text-sm text-gray-700 font-medium mb-3">{s.theme}</p>
+                  <p className="text-sm text-gray-700 font-medium mb-2">{s.theme}</p>
+                  
+                  {s.classifications && s.classifications.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {s.classifications.map((c: any, idx: number) => (
+                        <span key={idx} className="bg-[#f2efe9] text-[#4a5d4e] px-2 py-0.5 rounded text-[10px] font-medium border border-gray-200">
+                          {c.year} • {c.subcategory}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1 text-xs text-[#e8a375] font-medium">
                     <AlertTriangle size={14} /> Requer Aprovação 
                   </div>
@@ -162,8 +173,17 @@ export default function DirectorDashboard() {
               <>
                 <div className="bg-[#fcfaf7] p-6 border-b border-[#e3d8c8] flex justify-between items-center">
                   <div>
-                    <h3 className="text-lg font-bold text-[#4a5d4e]">Visualização de Proposta</h3>
+                    <h3 className="text-lg font-bold text-[#4a5d4e]">{selectedSession.theme}</h3>
                     <p className="text-sm text-[#7c8b80]">Enviado por {selectedSession.educator}</p>
+                    {selectedSession.classifications && selectedSession.classifications.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {selectedSession.classifications.map((c: any, idx: number) => (
+                          <span key={idx} className="bg-[#4a5d4e] text-white px-2.5 py-0.5 rounded text-[11px] font-medium">
+                            {c.year} • {c.subcategory}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
