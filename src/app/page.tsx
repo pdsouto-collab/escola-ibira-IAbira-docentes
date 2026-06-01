@@ -25,7 +25,10 @@ export default function EducatorPortal() {
       const res = await fetch("/api/agent/orchestrator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: "temp-session-123" }),
+        body: JSON.stringify({ 
+          sessionId: "temp-session-123",
+          chatHistory: messages.map(m => ({ role: m.role, content: m.content }))
+        }),
       });
       const data = await res.json();
       if (data.content) {

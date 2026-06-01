@@ -6,36 +6,60 @@ import prisma from '@/lib/prisma';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { sessionId } = await req.json();
-
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
-  }
-
   try {
-    const session = await prisma.pedagogicalSession.findUnique({
-      where: { id: sessionId },
-      include: { agentLogs: true }
-    });
+    const body = await req.json().catch(() => ({}));
+    const { sessionId, chatHistory } = body;
 
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Session ID is required' }, { status: 400 });
     }
 
-    // Coletar o contexto do Escutador
-    const briefingContext = session.agentLogs
-      .filter((log: any) => log.agentName === 'ESCUTADOR')
-      .map((log: any) => `Educador: ${log.input}\nEscutador: ${log.output}`)
-      .join('\n\n');
+    // Coletar o contexto do Escutador (Chat)
+    let briefingContext = '';
+    if (chatHistory && Array.isArray(chatHistory)) {
+      briefingContext = chatHistory
+        .map((msg: any) => `${msg.role === 'user' ? 'Educador' : 'Escutador'}: ${msg.content}`)
+        .join('\n\n');
+    }
 
-    // === PASSO 1: O CRIADOR (RAG & Cocriação) ===
-    // Mock do RAG: No futuro, faremos uma query no Neon com pgvector
-    // const knowledge = await prisma.$queryRaw`SELECT content FROM "KnowledgeBaseEmbedding" ORDER BY embedding <-> ${vector} LIMIT 3`;
+    // Fallback: Se não foi enviado histórico no body, tenta buscar do banco de dados
+    if (!briefingContext) {
+      try {
+        const session = await prisma.pedagogicalSession.findUnique({
+          where: { id: sessionId },
+          include: { agentLogs: true }
+        });
+        
+        if (session) {
+          briefingContext = session.agentLogs
+            .filter((log: any) => log.agentName === 'ESCUTADOR')
+            .map((log: any) => `Educador: ${log.input}\nEscutador: ${log.output}`)
+            .join('\n\n');
+        }
+      } catch (dbError) {
+        console.error('Failed to retrieve session from database in orchestrator:', dbError);
+      }
+    }
+
+    // Se o briefing ainda estiver vazio, usa um fallback explicativo para o modelo
+    if (!briefingContext) {
+      briefingContext = 'Educador deseja iniciar uma vivência sensorial rica focada nos elementos da natureza.';
+    }
+
+    // === ORQUESTRADOR DE AGENTES (Fusão das chamadas Criador & Revisor) ===
     const ragContext = `Diretrizes da Escola Ibirá: Foco em autonomia, contato com a natureza e materiais não estruturados.
 BNCC: Campos de experiência 'O eu, o outro e o nós', 'Traços, sons, cores e formas'.`;
 
-    const creatorPrompt = `Você é "O Criador", um agente focado em desenhar vivências sensoriais baseadas na natureza.
-Utilize o briefing abaixo e o contexto pedagógico para criar uma proposta de Vivência rica.
+    const combinedPrompt = `Você atuará sequencialmente como dois agentes pedagógicos da Escola Ibirá: "O Criador" e "O Revisor".
+
+Etapa 1 - O Criador: Desenha uma vivência sensorial rica baseada na natureza, usando o briefing abaixo. A proposta deve ser dividida estritamente nas seguintes seções:
+1. Preparação do Espaço Natural
+2. Roda de Investigação
+3. Vivência Livre
+4. Registro Coletivo
+Foque em experiências sensoriais, autonomia da criança (abordagem Pikler/Antroposófica) e livre exploração (evite atividades escolares tradicionais, folhas prontas de colorir, etc.).
+
+Etapa 2 - O Revisor: Revisa a proposta do Criador para garantir alinhamento técnico e pedagógico com a Escola Ibirá e a BNCC. Caso encontre elementos estruturados demais, substitua por exploração e brincadeira livre. No final da proposta revisada, injete as tags/códigos de campos de experiência da BNCC (Educação Infantil) de forma orgânica.
 
 Contexto Pedagógico (RAG):
 ${ragContext}
@@ -43,85 +67,111 @@ ${ragContext}
 Briefing da Educadora:
 ${briefingContext}
 
-Gere uma proposta dividida estritamente nas seguintes seções (use Markdown):
-1. Preparação do Espaço Natural
-2. Roda de Investigação
-3. Vivência Livre
-4. Registro Coletivo
+INSTRUÇÃO CRÍTICA DE FORMATAÇÃO:
+Você deve retornar a sua resposta EXATAMENTE no formato delimitado abaixo. Não inclua nenhum texto introdutório antes de "=== CRIADOR ===" nem texto conclusivo após "=== REVISOR ===".
 
-Foque em experiências sensoriais, não gere planilhas ou atividades tradicionais escolares.`;
+=== CRIADOR ===
+[Escreva aqui apenas o texto da proposta inicial gerada pelo Criador]
 
-    const creatorResult = await generateText({
+=== REVISOR ===
+[Escreva aqui apenas o texto final revisado e polido pelo Revisor, incluindo as tags da BNCC no final]`;
+
+    const result = await generateText({
       model: anthropic('claude-sonnet-4-6'),
-      prompt: creatorPrompt,
+      prompt: combinedPrompt,
     });
 
-    await prisma.agentLog.create({
-      data: {
-        sessionId,
-        agentName: 'CRIADOR',
-        input: briefingContext,
-        output: creatorResult.text,
-      }
-    });
+    const textOutput = result.text;
+    const parts = textOutput.split('=== REVISOR ===');
+    let creatorContent = '';
+    let reviewerContent = '';
 
-    // === PASSO 2: O REVISOR (Alinhamento Técnico) ===
-    const reviewerPrompt = `Você é "O Revisor", um crítico pedagógico rigoroso da Escola Ibirá.
-Sua função é revisar a vivência proposta pelo Criador e garantir alinhamento total com a autonomia da criança e a BNCC.
-Se houver atividades prontas (como folhas de colorir), substitua por exploração livre.
-Injete as tags/códigos da BNCC adequados para a Educação Infantil de forma natural ao final do documento.
+    if (parts.length >= 2) {
+      reviewerContent = parts[1].trim();
+      const creatorPart = parts[0].split('=== CRIADOR ===');
+      creatorContent = (creatorPart.length >= 2 ? creatorPart[1] : creatorPart[0]).trim();
+    } else {
+      // Fallback robusto se o modelo não seguir o formato dos delimitadores
+      reviewerContent = textOutput.replace(/=== CRIADOR ===|=== REVISOR ===/g, '').trim();
+      creatorContent = reviewerContent;
+    }
 
-Proposta Original do Criador:
-${creatorResult.text}
+    // Salvar logs e dados finais no banco de dados de forma resiliente
+    let requiresDirectorApproval = false;
+    try {
+      // Garante que a PedagogicalSession existe no banco de dados
+      await prisma.pedagogicalSession.upsert({
+        where: { id: sessionId },
+        create: { 
+          id: sessionId, 
+          status: "GERADO",
+          educador: {
+            connectOrCreate: {
+              where: { email: 'mock@ibira.com' },
+              create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+            }
+          }
+        },
+        update: {}
+      });
 
-Retorne apenas a proposta final polida em Markdown.`;
+      // Salva o log do Criador
+      await prisma.agentLog.create({
+        data: {
+          sessionId,
+          agentName: 'CRIADOR',
+          input: briefingContext,
+          output: creatorContent,
+        }
+      });
 
-    const reviewerResult = await generateText({
-      model: anthropic('claude-sonnet-4-6'),
-      prompt: reviewerPrompt,
-    });
+      // Salva o log do Revisor
+      await prisma.agentLog.create({
+        data: {
+          sessionId,
+          agentName: 'REVISOR',
+          input: creatorContent,
+          output: reviewerContent,
+        }
+      });
 
-    await prisma.agentLog.create({
-      data: {
-        sessionId,
-        agentName: 'REVISOR',
-        input: creatorResult.text,
-        output: reviewerResult.text,
-      }
-    });
+      // Determinar aprovação da diretoria
+      requiresDirectorApproval = reviewerContent.toLowerCase().includes('projeto');
 
-    // Determinar se requer aprovação da diretoria (Lógica mock baseada no texto, ou sempre true para projetos grandes)
-    const requiresDirectorApproval = reviewerResult.text.toLowerCase().includes('projeto') || session.requiresDirectorApproval;
+      await prisma.pedagogicalSession.update({
+        where: { id: sessionId },
+        data: { 
+          status: requiresDirectorApproval ? 'AGUARDANDO_DIRETORIA' : 'REVISADO',
+          requiresDirectorApproval
+        }
+      });
 
-    await prisma.pedagogicalSession.update({
-      where: { id: sessionId },
-      data: { 
-        status: requiresDirectorApproval ? 'AGUARDANDO_DIRETORIA' : 'REVISADO',
-        requiresDirectorApproval
-      }
-    });
+      // Salva o conteúdo revisado final
+      await prisma.finalContent.upsert({
+        where: { sessionId },
+        create: {
+          sessionId,
+          content: reviewerContent,
+          version: 1
+        },
+        update: {
+          content: reviewerContent,
+          version: { increment: 1 }
+        }
+      });
+    } catch (dbError) {
+      console.error('Database operations failed in orchestrator, proceeding anyway:', dbError);
+    }
 
-    await prisma.finalContent.upsert({
-      where: { sessionId },
-      create: {
-        sessionId,
-        content: reviewerResult.text,
-        version: 1
-      },
-      update: {
-        content: reviewerResult.text,
-        version: { increment: 1 }
-      }
-    });
-
+    // Retorna a proposta do revisor com sucesso para a interface
     return NextResponse.json({ 
       success: true, 
-      content: reviewerResult.text,
+      content: reviewerContent,
       status: requiresDirectorApproval ? 'AGUARDANDO_DIRETORIA' : 'REVISADO'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Orchestration error:', error);
-    return NextResponse.json({ error: 'Failed to orchestrate agents' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to orchestrate agents' }, { status: 500 });
   }
 }

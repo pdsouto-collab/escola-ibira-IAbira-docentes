@@ -28,38 +28,33 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
       async onFinish({ text }) {
         if (sessionId) {
           try {
-            // Salva as mensagens no banco em background para não travar a resposta
-            (async () => {
-              try {
-                await prisma.pedagogicalSession.upsert({
-                  where: { id: sessionId },
-                  create: { 
-                    id: sessionId, 
-                    status: "BRIEFING",
-                    educador: {
-                      connectOrCreate: {
-                        where: { email: 'mock@ibira.com' },
-                        create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-                      }
-                    }
-                  },
-                  update: {}
-                });
+            // Garante que a sessão exista no banco para não dar erro de chave estrangeira
+            await prisma.pedagogicalSession.upsert({
+              where: { id: sessionId },
+              create: { 
+                id: sessionId, 
+                status: "BRIEFING",
+                educador: {
+                  connectOrCreate: {
+                    where: { email: 'mock@ibira.com' },
+                    create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
+                  }
+                }
+              },
+              update: {}
+            });
 
-                await prisma.agentLog.create({
-                  data: {
-                    sessionId: sessionId,
-                    agentName: 'ESCUTADOR',
-                    input: messages[messages.length - 1].content,
-                    output: text,
-                  },
-                });
-              } catch (bgError) {
-                console.error("ERRO AO SALVAR NO BANCO DE DADOS EM BACKGROUND:", bgError);
-              }
-            })();
+            // Log da interação do Escutador no banco de dados
+            await prisma.agentLog.create({
+              data: {
+                sessionId: sessionId,
+                agentName: 'ESCUTADOR',
+                input: messages[messages.length - 1].content,
+                output: text,
+              },
+            });
           } catch (dbError) {
-            console.error("ERRO NO TRY CATCH DO ONFINISH:", dbError);
+            console.error("ERRO AO SALVAR NO BANCO DE DADOS (Prisma):", dbError);
           }
         }
       }
