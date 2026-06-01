@@ -25,7 +25,36 @@ export default function BibliotecaPage() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   const faixasAnos = ["TODAS", "Infantil", "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
-  const subCategories = ["TODAS", "Artes", "Ciências", "Educação Física", "Geografia", "História", "Língua Portuguesa", "Matemática", "Música"];
+  const [subCategories, setSubCategories] = useState<string[]>(['TODAS']);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const url = yearFilter === 'TODAS' 
+          ? '/api/subcategories' 
+          : `/api/subcategories?year=${yearFilter}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const uniqueNames = Array.from(new Set(data.subcategories.map((s: any) => s.name))) as string[];
+          uniqueNames.sort();
+          setSubCategories(['TODAS', ...uniqueNames]);
+          
+          if (subFilter !== 'TODAS' && !uniqueNames.includes(subFilter)) {
+            setSubFilter('TODAS');
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar sub-categorias para filtros:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, [yearFilter]);
 
   useEffect(() => {
     fetchSessions();
@@ -76,10 +105,15 @@ export default function BibliotecaPage() {
                 className="w-full border rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] text-xs"
                 value={subFilter}
                 onChange={(e) => setSubFilter(e.target.value)}
+                disabled={loadingCategories}
               >
-                {subCategories.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {loadingCategories ? (
+                  <option>Carregando...</option>
+                ) : (
+                  subCategories.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))
+                )}
               </select>
             </div>
           </div>

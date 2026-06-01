@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send, Leaf, Sparkles, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,10 +25,36 @@ export default function EducatorPortal() {
   const [tema, setTema] = useState("");
   const [classifications, setClassifications] = useState<{ year: string; subcategory: string }[]>([]);
   const [selectedYear, setSelectedYear] = useState("Infantil");
-  const [selectedSub, setSelectedSub] = useState("Artes");
+  const [selectedSub, setSelectedSub] = useState("");
+  const [subCategories, setSubCategories] = useState<string[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(false);
 
   const faixasAnos = ["Infantil", "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
-  const subCategories = ["Artes", "Ciências", "Educação Física", "Geografia", "História", "Língua Portuguesa", "Matemática", "Música"];
+
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      setLoadingSubs(true);
+      try {
+        const res = await fetch(`/api/subcategories?year=${selectedYear}`);
+        if (res.ok) {
+          const data = await res.json();
+          const names = data.subcategories.map((s: any) => s.name);
+          setSubCategories(names);
+          if (names.length > 0) {
+            setSelectedSub(names[0]);
+          } else {
+            setSelectedSub("");
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar sub-categorias:", error);
+      } finally {
+        setLoadingSubs(false);
+      }
+    };
+
+    fetchSubCategories();
+  }, [selectedYear]);
 
   const handleAddClassification = () => {
     const exists = classifications.some(c => c.year === selectedYear && c.subcategory === selectedSub);
@@ -286,8 +312,15 @@ export default function EducatorPortal() {
                         value={selectedSub}
                         onChange={(e) => setSelectedSub(e.target.value)}
                         className="w-full border border-[#e3d8c8] rounded-md p-2 bg-[#fcfaf7] text-sm focus:outline-none focus:ring-2 focus:ring-[#8fb39c]"
+                        disabled={loadingSubs || subCategories.length === 0}
                       >
-                        {subCategories.map(s => <option key={s} value={s}>{s}</option>)}
+                        {loadingSubs ? (
+                          <option>Carregando...</option>
+                        ) : subCategories.length === 0 ? (
+                          <option>Nenhuma sub-categoria</option>
+                        ) : (
+                          subCategories.map(s => <option key={s} value={s}>{s}</option>)
+                        )}
                       </select>
                     </div>
                     <Button 

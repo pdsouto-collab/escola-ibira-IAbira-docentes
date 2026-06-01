@@ -96,3 +96,12 @@ model FinalContent {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 }
+
+model Subcategory {
+  id        String   @id @default(uuid())
+  name      String
+  year      String   // "Infantil", "1º Ano", etc.
+  createdAt DateTime @default(now())
+
+  @@unique([name, year])
+}
