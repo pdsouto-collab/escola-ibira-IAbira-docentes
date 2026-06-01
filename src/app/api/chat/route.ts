@@ -58,6 +58,11 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
                 console.error("ERRO AO SALVAR NO BANCO DE DADOS EM BACKGROUND:", bgError);
               }
             })();
+          } catch (dbError) {
+            console.error("ERRO NO TRY CATCH DO ONFINISH:", dbError);
+          }
+        }
+      }
     });
 
     return result.toDataStreamResponse();
