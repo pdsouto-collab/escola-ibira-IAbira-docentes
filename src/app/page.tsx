@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import { Textarea } from "@/components/ui/textarea";
+import UserMenu from "@/components/UserMenu";
 
 export default function EducatorPortal() {
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
@@ -163,7 +164,10 @@ export default function EducatorPortal() {
   };
 
   return (
-    <div className="flex h-screen bg-[#fcfaf7] font-sans">
+    <div className="flex h-screen bg-[#fcfaf7] font-sans relative">
+      <div className="absolute top-6 right-6 z-30">
+        <UserMenu />
+      </div>
       {/* LADO ESQUERDO: O ESCUTADOR (Chat) */}
       <div className="w-1/3 flex flex-col border-r border-[#e3d8c8] bg-white shadow-sm">
         <div className="p-6 border-b border-[#e3d8c8] flex items-center gap-3">

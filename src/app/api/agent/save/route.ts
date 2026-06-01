@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-server';
 
 export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+  }
   try {
     const { sessionId, content, action, tema, classifications } = await req.json().catch(() => ({}));
 
@@ -21,10 +26,7 @@ export async function POST(req: Request) {
         status: action === 'approve' ? 'AGUARDANDO_DIRETORIA' : 'GERADO',
         tema: tema || 'Vivência na Natureza',
         educador: {
-          connectOrCreate: {
-            where: { email: 'mock@ibira.com' },
-            create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-          }
+          connect: { email: user.email }
         }
       },
       update: action === 'approve' ? {

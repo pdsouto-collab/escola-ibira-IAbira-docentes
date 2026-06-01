@@ -2,6 +2,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth-server';
 
 export const maxDuration = 60;
 
@@ -19,6 +20,11 @@ async function runWithTimeout(promise: Promise<any>, timeoutMs: number) {
 }
 
 export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { sessionId, chatHistory } = body;
@@ -95,10 +101,7 @@ ${briefingContext}`;
                 id: sessionId, 
                 status: "GERADO",
                 educador: {
-                  connectOrCreate: {
-                    where: { email: 'mock@ibira.com' },
-                    create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-                  }
+                  connect: { email: user.email }
                 }
               },
               update: {}

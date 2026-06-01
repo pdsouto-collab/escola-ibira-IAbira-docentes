@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
+import UserMenu from '@/components/UserMenu';
 
 type Session = {
   id: string;
@@ -77,9 +78,10 @@ export default function BibliotecaPage() {
     <div className="min-h-screen bg-[#F8FBF9]">
       <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
         <h1 className="text-2xl font-bold text-[#2A4B3A]">Biblioteca de Vivências</h1>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Button className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white shadow-sm transition-all" onClick={() => window.location.href = '/'}>Painel do Educador</Button>
           <Button className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-sm transition-all" onClick={() => window.location.href = '/diretoria'}>Painel da Diretoria</Button>
+          <UserMenu />
         </div>
       </header>
 

@@ -2,11 +2,17 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { streamText } from 'ai';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 
 // Permitir streaming de respostas em tempo real para "O Escutador"
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+  }
+
   const { messages, sessionId } = await req.json();
 
   // Prompt do Escutador (Agente 1)
@@ -33,10 +39,7 @@ Diretrizes de conversação:
                 id: sessionId, 
                 status: "BRIEFING",
                 educador: {
-                  connectOrCreate: {
-                    where: { email: 'mock@ibira.com' },
-                    create: { nome: 'Mock Educador', email: 'mock@ibira.com', role: 'EDUCADOR' }
-                  }
+                  connect: { email: user.email }
                 }
               },
               update: {}

@@ -33,7 +33,9 @@ enum DocumentType {
 model User {
   id                   String               @id @default(uuid())
   nome                 String
+  sobrenome            String?
   email                String               @unique
+  passwordHash         String
   role                 Role                 @default(EDUCADOR)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
