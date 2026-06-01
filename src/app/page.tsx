@@ -18,6 +18,44 @@ export default function EducatorPortal() {
   const [finalContent, setFinalContent] = useState("");
   const [isOrchestrating, setIsOrchestrating] = useState(false);
   const [orchestratorError, setOrchestratorError] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+
+  const handleSave = async (action: "draft" | "approve") => {
+    if (!finalContent) return;
+    if (action === "draft") setIsSavingDraft(true);
+    else setIsSubmittingApproval(true);
+    setOrchestratorError(null);
+
+    try {
+      const res = await fetch("/api/agent/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "temp-session-123",
+          content: finalContent,
+          action,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao salvar proposta");
+      }
+
+      if (action === "draft") {
+        alert("Rascunho salvo com sucesso!");
+      } else {
+        alert("Vivência enviada para aprovação da diretoria!");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Ocorreu um erro ao salvar.");
+    } finally {
+      setIsSavingDraft(false);
+      setIsSubmittingApproval(false);
+    }
+  };
 
   // Gatilho para O Criador & O Revisor
   const handleGenerateProposal = async () => {
@@ -155,11 +193,20 @@ export default function EducatorPortal() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="text-[#6d8a77] border-[#6d8a77] hover:bg-[#f2efe9]">
-              Salvar Rascunho
+            <Button 
+              variant="outline" 
+              onClick={() => handleSave("draft")}
+              disabled={!finalContent || isSavingDraft || isSubmittingApproval || isOrchestrating}
+              className="text-[#6d8a77] border-[#6d8a77] hover:bg-[#f2efe9]"
+            >
+              {isSavingDraft ? "Salvando..." : "Salvar Rascunho"}
             </Button>
-            <Button className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-md">
-              Enviar para Aprovação (Diretoria)
+            <Button 
+              onClick={() => handleSave("approve")}
+              disabled={!finalContent || isSavingDraft || isSubmittingApproval || isOrchestrating}
+              className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-md"
+            >
+              {isSubmittingApproval ? "Enviando..." : "Enviar para Aprovação (Diretoria)"}
             </Button>
           </div>
         </div>
