@@ -1,5 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { streamText } from 'ai';
+import { streamText, embed } from 'ai';
+import { openai } from '@ai-sdk/openai';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth-server';
@@ -66,10 +67,36 @@ export async function POST(req: Request) {
     }
 
     // === ORQUESTRADOR DE AGENTES (Fusão das chamadas Criador & Revisor via Stream) ===
-    const ragContext = `Diretrizes da Escola Ibirá: Foco em autonomia, contato com a natureza e materiais não estruturados.
+    let ragContext = `Diretrizes da Escola Ibirá: Foco em autonomia, contato com a natureza e materiais não estruturados.
 BNCC: Campos de experiência 'O eu, o outro e o nós', 'Traços, sons, cores e formas'.`;
 
-    const combinedPrompt = `Você é o assistente pedagógico da Escola Ibirá.
+    try {
+      // 1. Gerar o vetor do briefing
+      const { embedding } = await embed({
+        model: openai.embedding('text-embedding-3-small'),
+        value: briefingContext.slice(0, 3000), // Prevenir tamanho excessivo
+      });
+
+      // 2. Buscar no pgvector do PostgreSQL
+      const similarDocs = await prisma.$queryRaw<any[]>`
+        SELECT content, metadata
+        FROM "KnowledgeBaseEmbedding"
+        ORDER BY embedding <=> ${JSON.stringify(embedding)}::vector
+        LIMIT 4
+      `;
+
+      if (similarDocs && similarDocs.length > 0) {
+        ragContext = similarDocs
+          .map(doc => `[Metodologia: ${doc.metadata}]\n${doc.content}`)
+          .join('\n\n---\n\n');
+      }
+    } catch (ragError) {
+      console.warn("Aviso: Falha ao executar busca RAG vetorial no banco. Usando fallback.", ragError);
+    }
+
+    // Carregar prompt do Criador do banco
+    let combinedPrompt = '';
+    const defaultCriadorPrompt = `Você é o assistente pedagógico da Escola Ibirá.
 Com base no briefing do educador e no contexto pedagógico (RAG) fornecidos abaixo, crie uma proposta de vivência sensorial na natureza de alta qualidade.
 
 A proposta deve ser muito detalhada e dividida estritamente nas seguintes seções em Markdown:
@@ -82,10 +109,39 @@ Foque em experiências sensoriais, autonomia da criança (abordagem Pikler/Antro
 Ao final do documento, de forma natural, adicione e liste os códigos e campos de experiência da BNCC (Educação Infantil) adequados para esta vivência.
 
 Contexto Pedagógico (RAG):
-${ragContext}
+{{RAG}}
 
 Briefing da Educadora:
-${briefingContext}`;
+{{BRIEFING}}`;
+
+    let activePromptTemplate = defaultCriadorPrompt;
+
+    try {
+      const config = await prisma.agentConfig.findUnique({
+        where: { agentName: 'CRIADOR' }
+      });
+      if (config?.instructions) {
+        activePromptTemplate = config.instructions;
+      }
+    } catch (error) {
+      console.warn("Aviso: Falha ao buscar instruções do Criador no banco, utilizando padrão.", error);
+    }
+
+    // Processar placeholders
+    let tempPrompt = activePromptTemplate;
+    if (tempPrompt.includes('{{RAG}}') || tempPrompt.includes('{{rag}}')) {
+      tempPrompt = tempPrompt.replace(/\{\{RAG\}\}/gi, ragContext);
+    } else {
+      tempPrompt = tempPrompt + `\n\nContexto Pedagógico (RAG):\n${ragContext}`;
+    }
+
+    if (tempPrompt.includes('{{BRIEFING}}') || tempPrompt.includes('{{briefing}}')) {
+      tempPrompt = tempPrompt.replace(/\{\{BRIEFING\}\}/gi, briefingContext);
+    } else {
+      tempPrompt = tempPrompt + `\n\nBriefing da Educadora:\n${briefingContext}`;
+    }
+
+    combinedPrompt = tempPrompt;
 
     const result = await streamText({
       model: anthropic('claude-sonnet-4-6'),

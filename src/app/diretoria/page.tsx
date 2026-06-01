@@ -97,20 +97,23 @@ export default function DirectorDashboard() {
           <span className="block text-sm font-normal text-[#8fb39c]">Diretoria Pedagógica</span>
         </div>
         <nav className="flex flex-col gap-2">
-          <div className="p-3 bg-[#394a3d] rounded-lg text-sm font-medium flex items-center justify-between">
+          <div className="px-3 py-2.5 bg-[#394a3d] rounded-lg text-xs font-medium flex items-center justify-between">
             Aprovações Pendentes
-            <span className="bg-[#e8a375] text-white text-xs px-2 py-0.5 rounded-full">
+            <span className="bg-[#e8a375] text-white text-[10px] px-1.5 py-0.5 rounded-full">
               {isLoading ? "..." : sessions.length}
             </span>
           </div>
-          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => window.location.href = '/biblioteca'}>
+          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/biblioteca'}>
             Biblioteca de Vivências
           </div>
-          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/conhecimento'}>
+          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/conhecimento'}>
             Base de Conhecimento (RAG)
           </div>
-          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/configuracoes'}>
+          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/configuracoes'}>
             Configurações de Categorias
+          </div>
+          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/agentes'}>
+            Diretrizes dos Agentes (Treinar IA)
           </div>
         </nav>
       </div>
@@ -120,9 +123,6 @@ export default function DirectorDashboard() {
         <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
           <h1 className="text-2xl font-bold text-[#2A4B3A]">Portal da Diretoria</h1>
           <div className="flex gap-3 flex-wrap items-center">
-            <Button className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white shadow-sm transition-all" onClick={() => window.location.href = '/diretoria/configuracoes'}>Configurar Categorias</Button>
-            <Button className="bg-[#e8a375] hover:bg-[#d49164] text-white shadow-sm transition-all" onClick={() => window.location.href = '/diretoria/conhecimento'}>Alimentar IA (Conhecimento)</Button>
-            <Button className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-sm transition-all" onClick={() => window.location.href = '/biblioteca'}>Biblioteca de Vivências</Button>
             <Button className="bg-white border border-[#4a5d4e] text-[#4a5d4e] hover:bg-[#f2efe9] transition-all" onClick={() => window.location.href = '/'}>Sair / Voltar</Button>
             <UserMenu />
           </div>

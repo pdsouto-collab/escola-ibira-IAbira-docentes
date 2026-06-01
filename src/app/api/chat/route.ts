@@ -15,14 +15,27 @@ export async function POST(req: Request) {
 
   const { messages, sessionId } = await req.json();
 
-  // Prompt do Escutador (Agente 1)
-  const systemPrompt = `Você é "O Escutador", um agente empático e pedagógico da Escola Ibirá.
+  // Prompt do Escutador Padrão (Fallback)
+  const defaultPrompt = `Você é "O Escutador", um agente empático e pedagógico da Escola Ibirá.
 Seu objetivo é conversar com a educadora para extrair o "Sumário de Intencionalidade Pedagógica" ou receber ajustes sobre a proposta gerada.
 
 Diretrizes de conversação:
 1. Coleta Inicial: Faça perguntas curtas e diretas, uma por vez, sobre o tema de interesse das crianças, a faixa etária/ciclo, e o ciclo da natureza atual.
 2. Sugestão de Geração: Quando tiver informações suficientes, encerre com uma mensagem acolhedora e peça para a educadora clicar em "Gerar Proposta Pedagógica (Criador)" para elaborar a vivência.
 3. Ciclo de Feedback/Ajustes: Se a educadora solicitar alterações na proposta já gerada (ex: mudar materiais, focar mais em barro, alterar dinâmicas), acolha a ideia de forma empática sob a ótica da autonomia infantil (abordagem Pikler/Antroposofia) e sugira que ela clique em "Gerar Proposta" novamente para que "O Criador" aplique as alterações no documento.`;
+
+  let systemPrompt = defaultPrompt;
+
+  try {
+    const config = await prisma.agentConfig.findUnique({
+      where: { agentName: 'ESCUTADOR' }
+    });
+    if (config?.instructions) {
+      systemPrompt = config.instructions;
+    }
+  } catch (error) {
+    console.warn("Aviso: Falha ao buscar instruções do Escutador no banco, utilizando padrão.", error);
+  }
 
   try {
     const result = await streamText({

@@ -107,3 +107,11 @@ model Subcategory {
 
   @@unique([name, year])
 }
+
+model AgentConfig {
+  id           String   @id @default(uuid())
+  agentName    String   @unique // "ESCUTADOR" ou "CRIADOR"
+  instructions String   @db.Text
+  updatedAt    DateTime @updatedAt
+}
+
