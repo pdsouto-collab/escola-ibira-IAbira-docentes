@@ -65,7 +65,28 @@ Quando você sentir que tem informações suficientes, encerre a conversa pedind
       }
     });
 
-    return result.toDataStreamResponse();
+    const streamResponse = result.toDataStreamResponse();
+    
+    // Hack: intercepta o stream para engolir chunks de erro "e:" 
+    // gerados no final da stream por incompatibilidade do parser do SDK.
+    const transformStream = new TransformStream({
+      transform(chunk, controller) {
+        const text = new TextDecoder().decode(chunk);
+        const lines = text.split('\n');
+        const filteredLines = lines.filter(line => !line.startsWith('e:'));
+        if (filteredLines.length > 0) {
+          const newText = filteredLines.join('\n');
+          if (newText) {
+            controller.enqueue(new TextEncoder().encode(newText));
+          }
+        }
+      }
+    });
+
+    return new Response(streamResponse.body?.pipeThrough(transformStream), {
+      headers: streamResponse.headers,
+      status: streamResponse.status
+    });
   } catch (error: any) {
     console.error("DEU ERRO NO SERVIDOR:", error);
     // Retorna o erro exato para a interface mostrar
