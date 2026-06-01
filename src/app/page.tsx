@@ -165,9 +165,6 @@ export default function EducatorPortal() {
 
   return (
     <div className="flex h-screen bg-[#fcfaf7] font-sans relative">
-      <div className="absolute top-6 right-6 z-30">
-        <UserMenu />
-      </div>
       {/* LADO ESQUERDO: O ESCUTADOR (Chat) */}
       <div className="w-1/3 flex flex-col border-r border-[#e3d8c8] bg-white shadow-sm">
         <div className="p-6 border-b border-[#e3d8c8] flex items-center gap-3">
@@ -255,7 +252,7 @@ export default function EducatorPortal() {
               <p className="text-xs text-[#7c8b80]">Revisado e Alinhado com a BNCC</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
             <Button 
               variant="outline" 
               onClick={() => handleSave("draft")}
@@ -271,6 +268,9 @@ export default function EducatorPortal() {
             >
               {isSubmittingApproval ? "Enviando..." : "Enviar para Aprovação (Diretoria)"}
             </Button>
+            <div className="border-l border-[#e3d8c8] pl-3 ml-1 flex items-center">
+              <UserMenu />
+            </div>
           </div>
         </div>
 
