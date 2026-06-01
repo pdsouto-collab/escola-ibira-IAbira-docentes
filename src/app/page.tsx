@@ -17,10 +17,13 @@ export default function EducatorPortal() {
 
   const [finalContent, setFinalContent] = useState("");
   const [isOrchestrating, setIsOrchestrating] = useState(false);
+  const [orchestratorError, setOrchestratorError] = useState<string | null>(null);
 
   // Gatilho para O Criador & O Revisor
   const handleGenerateProposal = async () => {
     setIsOrchestrating(true);
+    setOrchestratorError(null);
+    setFinalContent("");
     try {
       const res = await fetch("/api/agent/orchestrator", {
         method: "POST",
@@ -30,12 +33,33 @@ export default function EducatorPortal() {
           chatHistory: messages.map(m => ({ role: m.role, content: m.content }))
         }),
       });
-      const data = await res.json();
-      if (data.content) {
-        setFinalContent(data.content);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Erro no servidor (Status ${res.status})`);
       }
-    } catch (error) {
+
+      if (!res.body) {
+        throw new Error("O servidor não retornou um corpo de transmissão válido.");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let text = "";
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          text += chunk;
+          setFinalContent(text);
+        }
+      }
+    } catch (error: any) {
       console.error("Erro ao orquestrar agentes", error);
+      setOrchestratorError(error.message || "Erro de rede ou conexão.");
     } finally {
       setIsOrchestrating(false);
     }
@@ -141,6 +165,12 @@ export default function EducatorPortal() {
         </div>
 
         <div className="flex-1 p-12 overflow-y-auto">
+          {orchestratorError && (
+            <div className="max-w-3xl mx-auto bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 mb-6 shadow-sm">
+              <h4 className="font-bold text-sm mb-1">Não foi possível gerar a proposta</h4>
+              <p className="text-xs">{orchestratorError}</p>
+            </div>
+          )}
           {finalContent ? (
             <div className="max-w-3xl mx-auto bg-white p-12 rounded-xl shadow-sm border border-[#e3d8c8] min-h-full">
               {/* Se o educador quiser editar, um Textarea rico pode ser integrado aqui (ex: TipTap). Para mock, usamos react-markdown no view. */}
