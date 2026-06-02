@@ -91,28 +91,28 @@ export default function DirectorDashboard() {
   return (
     <div className="flex h-screen bg-[#f2efe9] font-sans">
       {/* SIDEBAR */}
-      <div className="w-64 bg-[#4a5d4e] text-white flex flex-col p-6 shadow-xl z-10">
-        <div className="mb-10 font-bold text-xl tracking-tight text-[#e8a375]">
+      <div className="w-80 bg-[#4a5d4e] text-white flex flex-col p-5 shadow-xl z-10">
+        <div className="mb-10 font-bold text-xl tracking-tight text-[#e8a375] px-2">
           Escola Ibirá
           <span className="block text-sm font-normal text-[#8fb39c]">Diretoria Pedagógica</span>
         </div>
         <nav className="flex flex-col gap-2">
-          <div className="px-3 py-2.5 bg-[#394a3d] rounded-lg text-xs font-medium flex items-center justify-between">
+          <div className="px-3.5 py-3 bg-[#394a3d] rounded-lg text-sm font-medium flex items-center justify-between">
             Aprovações Pendentes
-            <span className="bg-[#e8a375] text-white text-[10px] px-1.5 py-0.5 rounded-full">
+            <span className="bg-[#e8a375] text-white text-xs px-2 py-0.5 rounded-full">
               {isLoading ? "..." : sessions.length}
             </span>
           </div>
-          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/biblioteca'}>
+          <div className="px-3.5 py-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70 transition-all" onClick={() => window.location.href = '/biblioteca'}>
             Biblioteca de Vivências
           </div>
-          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/conhecimento'}>
+          <div className="px-3.5 py-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70 transition-all" onClick={() => window.location.href = '/diretoria/conhecimento'}>
             Base de Conhecimento (RAG)
           </div>
-          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/configuracoes'}>
+          <div className="px-3.5 py-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70 transition-all" onClick={() => window.location.href = '/diretoria/configuracoes'}>
             Configurações de Categorias
           </div>
-          <div className="px-3 py-2.5 hover:bg-[#394a3d] rounded-lg text-xs cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria/agentes'}>
+          <div className="px-3.5 py-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70 transition-all" onClick={() => window.location.href = '/diretoria/agentes'}>
             Diretrizes dos Agentes (Treinar IA)
           </div>
         </nav>
