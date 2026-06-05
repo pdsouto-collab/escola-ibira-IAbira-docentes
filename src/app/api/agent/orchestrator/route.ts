@@ -141,7 +141,19 @@ Briefing da Educadora:
       tempPrompt = tempPrompt + `\n\nBriefing da Educadora:\n${briefingContext}`;
     }
 
-    combinedPrompt = tempPrompt;
+    let userPrefContext = '';
+    try {
+      const userPref = await prisma.userPreference.findUnique({
+        where: { userId: user.id }
+      });
+      if (userPref?.preferences) {
+        userPrefContext = `\n\n[DIRETRIZES PERSONALIZADAS E PREFERÊNCIAS DO EDUCADOR - MEMÓRIA DO AGENTE]:\nAo criar a proposta, atenda rigorosamente a estas preferências históricas do educador:\n${userPref.preferences}\n\n`;
+      }
+    } catch (prefError) {
+      console.warn("Aviso: Falha ao carregar preferências no orquestrador:", prefError);
+    }
+
+    combinedPrompt = userPrefContext + tempPrompt;
 
     const result = await streamText({
       model: anthropic('claude-sonnet-4-6'),

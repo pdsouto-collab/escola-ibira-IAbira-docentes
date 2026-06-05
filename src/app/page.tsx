@@ -22,6 +22,131 @@ export default function EducatorPortal() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
+  // Estados de Memória (Preferências do Educador)
+  const [preferences, setPreferences] = useState("");
+  const [isEditingPrefs, setIsEditingPrefs] = useState(false);
+  const [tempPrefs, setTempPrefs] = useState("");
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
+  const [showPrefsWidget, setShowPrefsWidget] = useState(false);
+
+  // Estados de feedback ativo
+  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  // Buscar preferências no banco ao montar a tela
+  const fetchPreferences = async () => {
+    try {
+      const res = await fetch("/api/agent/preferences");
+      if (res.ok) {
+        const data = await res.json();
+        setPreferences(data.preferences || "");
+        setTempPrefs(data.preferences || "");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar preferências:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPreferences();
+  }, []);
+
+  const handleSavePreferences = async () => {
+    setIsSavingPrefs(true);
+    try {
+      const res = await fetch("/api/agent/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferences: tempPrefs }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPreferences(data.preferences || "");
+        setIsEditingPrefs(false);
+      }
+    } catch (err) {
+      console.error("Erro ao salvar preferências:", err);
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
+  const handleResetPreferences = async () => {
+    if (!confirm("Tem certeza que deseja limpar toda a memória de preferências do assistente? Isso não poderá ser desfeito.")) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/agent/preferences", {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setPreferences("");
+        setTempPrefs("");
+        setIsEditingPrefs(false);
+        alert("Memória do assistente redefinida com sucesso!");
+      }
+    } catch (err) {
+      console.error("Erro ao resetar preferências:", err);
+    }
+  };
+
+  const handleSubmitFeedback = async (rating: number) => {
+    if (rating === 1) {
+      setIsSubmittingFeedback(true);
+      try {
+        const res = await fetch("/api/agent/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: "temp-session-123",
+            rating: 1,
+            comment: "Gostei da proposta gerada.",
+          }),
+        });
+        if (res.ok) {
+          setFeedbackSubmitted(true);
+          setFeedbackRating(1);
+          fetchPreferences(); // Atualiza a memória na tela imediatamente
+        }
+      } catch (err) {
+        console.error("Erro ao enviar feedback positivo:", err);
+      } finally {
+        setIsSubmittingFeedback(false);
+      }
+    } else {
+      setFeedbackRating(-1);
+    }
+  };
+
+  const handleSendNegativeFeedback = async () => {
+    if (!feedbackComment.trim()) {
+      alert("Por favor, digite seu comentário indicando o que melhorar.");
+      return;
+    }
+    setIsSubmittingFeedback(true);
+    try {
+      const res = await fetch("/api/agent/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "temp-session-123",
+          rating: -1,
+          comment: feedbackComment,
+        }),
+      });
+      if (res.ok) {
+        setFeedbackSubmitted(true);
+        fetchPreferences(); // Atualiza a memória na tela imediatamente
+      }
+    } catch (err) {
+      console.error("Erro ao enviar feedback negativo:", err);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   // Estados de classificação e Tema
   const [tema, setTema] = useState("");
   const [classifications, setClassifications] = useState<{ year: string; subcategory: string }[]>([]);
@@ -74,7 +199,21 @@ export default function EducatorPortal() {
       alert("Por favor, preencha o Tema/Título da vivência antes de salvar.");
       return;
     }
-    if (classifications.length === 0) {
+
+    let activeClassifications = [...classifications];
+    if (
+      activeClassifications.length === 0 &&
+      selectedYear &&
+      selectedSub &&
+      selectedSub !== "Carregando..." &&
+      selectedSub !== "Nenhuma sub-categoria"
+    ) {
+      const defaultClass = { year: selectedYear, subcategory: selectedSub };
+      activeClassifications = [defaultClass];
+      setClassifications([defaultClass]);
+    }
+
+    if (activeClassifications.length === 0) {
       alert("Por favor, adicione pelo menos uma classificação de ano/sub-categoria.");
       return;
     }
@@ -92,7 +231,7 @@ export default function EducatorPortal() {
           content: finalContent,
           action,
           tema,
-          classifications,
+          classifications: activeClassifications,
         }),
       });
 
@@ -122,6 +261,9 @@ export default function EducatorPortal() {
     setFinalContent("");
     setTema("");
     setClassifications([]);
+    setFeedbackRating(null);
+    setFeedbackComment("");
+    setFeedbackSubmitted(false);
     try {
       const res = await fetch("/api/agent/orchestrator", {
         method: "POST",
@@ -181,6 +323,74 @@ export default function EducatorPortal() {
             </header>
             <p className="text-xs text-[#7c8b80] mt-1">Briefing Dinâmico e Intencionalidade</p>
           </div>
+        </div>
+
+        {/* WIDGET: Memória do Assistente */}
+        <div className="border-b border-[#e3d8c8] bg-[#faf8f4] p-4 text-sm transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={() => setShowPrefsWidget(!showPrefsWidget)}
+              className="flex items-center gap-2 font-semibold text-[#4a5d4e] hover:text-[#394a3d] transition-all"
+            >
+              <Leaf size={16} className="text-[#8fb39c]" />
+              <span>Memória do Assistente {preferences ? '🧠' : '✨'}</span>
+            </button>
+            <div className="flex gap-2">
+              {preferences && (
+                <button 
+                  onClick={handleResetPreferences} 
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  Limpar
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  setIsEditingPrefs(!isEditingPrefs);
+                  setTempPrefs(preferences);
+                  setShowPrefsWidget(true);
+                }} 
+                className="text-xs text-[#6d8a77] hover:text-[#4a5d4e] font-medium"
+              >
+                {isEditingPrefs ? "Cancelar" : "Editar"}
+              </button>
+            </div>
+          </div>
+
+          {showPrefsWidget && (
+            <div className="mt-3 bg-white p-3 rounded-lg border border-[#e3d8c8] shadow-inner">
+              {isEditingPrefs ? (
+                <div className="flex flex-col gap-2">
+                  <Textarea 
+                    value={tempPrefs}
+                    onChange={(e) => setTempPrefs(e.target.value)}
+                    placeholder="Ex: - Prefere atividades que foquem no ciclo da natureza..."
+                    className="min-h-[100px] text-xs font-mono bg-[#fcfaf7] border-[#e3d8c8]"
+                  />
+                  <Button 
+                    onClick={handleSavePreferences}
+                    disabled={isSavingPrefs}
+                    size="sm"
+                    className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white self-end text-xs"
+                  >
+                    {isSavingPrefs ? "Salvando..." : "Salvar Alterações"}
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  {preferences ? (
+                    <div className="text-xs text-[#4a5d4e] whitespace-pre-line leading-relaxed">
+                      {preferences}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">
+                      O assistente ainda não aprendeu suas preferências. Conforme você der feedback nas propostas geradas, ele registrará seus gostos e estilos aqui de forma automática!
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <ScrollArea className="flex-1 p-6">
@@ -356,6 +566,77 @@ export default function EducatorPortal() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* CARD: Loop de Feedback Ativo */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-[#e3d8c8]">
+                <h3 className="text-md font-bold text-[#4a5d4e] mb-1 flex items-center gap-2">
+                  <Sparkles size={18} className="text-[#e8a375]" />
+                  Como avalia esta proposta pedagógica?
+                </h3>
+                <p className="text-xs text-[#7c8b80] mb-4">
+                  Seu feedback ativo calibra e "treina" o assistente de forma personalizada para as próximas gerações.
+                </p>
+
+                {feedbackSubmitted ? (
+                  <div className="bg-[#f0f7f4] border border-[#d2e6de] text-[#2b593f] p-4 rounded-lg text-sm flex items-center gap-2">
+                    <span className="text-lg">✨</span>
+                    <div>
+                      <p className="font-bold">Feedback enviado com sucesso!</p>
+                      <p className="text-xs opacity-80">A memória do seu assistente foi atualizada e recalibrada com base nos seus comentários.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex gap-4 items-center">
+                      <Button
+                        type="button"
+                        onClick={() => handleSubmitFeedback(1)}
+                        disabled={isSubmittingFeedback}
+                        className={`flex-1 py-3.5 flex items-center justify-center gap-2 border rounded-md transition-all ${
+                          feedbackRating === 1 
+                            ? "bg-[#6d8a77] text-white border-[#6d8a77] shadow-sm" 
+                            : "bg-[#fcfaf7] text-[#4a5d4e] border-[#e3d8c8] hover:bg-[#f2efe9]"
+                        }`}
+                      >
+                        <span className="text-base">👍</span> Gostei do plano
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleSubmitFeedback(-1)}
+                        disabled={isSubmittingFeedback}
+                        className={`flex-1 py-3.5 flex items-center justify-center gap-2 border rounded-md transition-all ${
+                          feedbackRating === -1 
+                            ? "bg-[#d97c7c] text-white border-[#d97c7c] shadow-sm" 
+                            : "bg-[#fcfaf7] text-[#4a5d4e] border-[#e3d8c8] hover:bg-[#f2efe9]"
+                        }`}
+                      >
+                        <span className="text-base">👎</span> Precisa melhorar
+                      </Button>
+                    </div>
+
+                    {feedbackRating === -1 && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        <label className="text-xs font-semibold text-gray-700">
+                          O que o assistente deve corrigir ou lembrar da próxima vez?
+                        </label>
+                        <Textarea
+                          value={feedbackComment}
+                          onChange={(e) => setFeedbackComment(e.target.value)}
+                          placeholder="Ex: Não use bexigas ou plásticos descartáveis. Prefira sementes, argila ou elementos 100% orgânicos. Faltou detalhar a roda de conversa."
+                          className="bg-[#fcfaf7] border-[#e3d8c8] text-sm focus-visible:ring-[#8fb39c] min-h-[80px]"
+                        />
+                        <Button
+                          onClick={handleSendNegativeFeedback}
+                          disabled={isSubmittingFeedback}
+                          className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white self-end text-xs"
+                        >
+                          {isSubmittingFeedback ? "Processando..." : "Enviar Feedback e Treinar IA"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Documento Markdown */}

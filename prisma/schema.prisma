@@ -40,6 +40,7 @@ model User {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   pedagogicalSessions  PedagogicalSession[]
+  userPreference       UserPreference?
 }
 
 model KnowledgeBaseEmbedding {
@@ -66,6 +67,25 @@ model PedagogicalSession {
   classifications           PedagogicalClassification[]
   agentLogs                 AgentLog[]
   finalContent              FinalContent?
+  feedbacks                 Feedback[]
+}
+
+model UserPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferences  String   @db.Text
+  updatedAt    DateTime @updatedAt
+}
+
+model Feedback {
+  id           String             @id @default(uuid())
+  sessionId    String
+  session      PedagogicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId       String
+  rating       Int                // 1 (up) ou -1 (down)
+  comment      String?            @db.Text
+  createdAt    DateTime           @default(now())
 }
 
 model PedagogicalClassification {

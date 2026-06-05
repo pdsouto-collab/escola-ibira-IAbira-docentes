@@ -38,6 +38,17 @@ Diretrizes de conversação:
   }
 
   try {
+    const userPref = await prisma.userPreference.findUnique({
+      where: { userId: user.id }
+    });
+    if (userPref?.preferences) {
+      systemPrompt += `\n\n[DIRETRIZES PERSONALIZADAS DESTE EDUCADOR - MEMÓRIA DE PREFERÊNCIAS]:\nSempre adapte o diálogo às preferências que você aprendeu com este educador:\n${userPref.preferences}`;
+    }
+  } catch (prefError) {
+    console.warn("Aviso: Falha ao buscar preferências do educador para o Escutador:", prefError);
+  }
+
+  try {
     const result = await streamText({
       model: anthropic('claude-sonnet-4-6'),
       messages,
