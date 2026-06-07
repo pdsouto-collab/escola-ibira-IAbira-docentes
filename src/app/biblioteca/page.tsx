@@ -79,6 +79,21 @@ export default function BibliotecaPage() {
       <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
         <h1 className="text-2xl font-bold text-[#2A4B3A]">Biblioteca de Vivências</h1>
         <div className="flex gap-3 items-center">
+          <Button 
+            variant="outline" 
+            className="border-[#8fb39c] text-[#8fb39c] hover:bg-[#e8f0eb] hover:text-[#7a9e88] shadow-sm transition-all" 
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/';
+                }
+              }
+            }}
+          >
+            Voltar
+          </Button>
           <Button className="bg-[#8fb39c] hover:bg-[#7a9e88] text-white shadow-sm transition-all" onClick={() => window.location.href = '/'}>Painel do Educador</Button>
           <Button className="bg-[#4a5d4e] hover:bg-[#394a3d] text-white shadow-sm transition-all" onClick={() => window.location.href = '/diretoria'}>Painel da Diretoria</Button>
           <UserMenu />
