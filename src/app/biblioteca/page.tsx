@@ -24,6 +24,7 @@ export default function BibliotecaPage() {
   const [subFilter, setSubFilter] = useState('TODAS');
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [activeMobileView, setActiveMobileView] = useState<'list' | 'detail'>('list');
 
   const faixasAnos = ["TODAS", "Infantil", "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
   const [subCategories, setSubCategories] = useState<string[]>(['TODAS']);
@@ -100,9 +101,11 @@ export default function BibliotecaPage() {
         </div>
       </header>
 
-      <main className="container mx-auto p-6 flex gap-6 h-[calc(100vh-80px)]">
+      <main className="container mx-auto p-4 md:p-6 flex flex-col md:flex-row gap-6 h-[calc(100vh-80px)] overflow-hidden">
         {/* Menu Lateral de Filtros e Lista */}
-        <div className="w-1/3 flex flex-col gap-4 border-r pr-6">
+        <div className={`w-full md:w-1/3 flex-col gap-4 border-r md:pr-6 border-[#e3d8c8] ${
+          activeMobileView === 'list' ? 'flex' : 'hidden md:flex'
+        }`}>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Filtrar por Ano</label>
@@ -146,7 +149,10 @@ export default function BibliotecaPage() {
                   <Card 
                     key={s.id} 
                     className={`cursor-pointer transition-colors ${selectedSession?.id === s.id ? 'border-[#4A7C59] bg-[#E8F3EB]' : 'hover:bg-gray-50'}`}
-                    onClick={() => setSelectedSession(s)}
+                    onClick={() => {
+                      setSelectedSession(s);
+                      setActiveMobileView('detail');
+                    }}
                   >
                     <CardHeader className="p-4">
                       <CardTitle className="text-sm font-bold text-[#2A4B3A]">{s.tema || 'Sem Tema Definido'}</CardTitle>
@@ -169,10 +175,18 @@ export default function BibliotecaPage() {
         </div>
 
         {/* Área Principal de Leitura */}
-        <div className="flex-1 bg-white border rounded-md shadow-sm overflow-hidden flex flex-col">
+        <div className={`flex-1 bg-white border rounded-md shadow-sm overflow-hidden flex-col ${
+          activeMobileView === 'detail' ? 'flex' : 'hidden md:flex'
+        }`}>
           {selectedSession ? (
             <>
               <div className="bg-[#E8F3EB] p-4 border-b">
+                <button 
+                  onClick={() => setActiveMobileView('list')}
+                  className="md:hidden mb-2 text-xs font-semibold text-[#2A4B3A] flex items-center gap-1 hover:text-[#4A7C59] transition-all bg-white/50 px-2.5 py-1 rounded-lg border border-[#cbe1d3] w-fit"
+                >
+                  ← Voltar para a lista
+                </button>
                 <h2 className="text-xl font-bold text-[#2A4B3A]">{selectedSession.tema}</h2>
                 <div className="flex flex-wrap gap-1.5 my-2">
                   {selectedSession.classifications && selectedSession.classifications.map((c, idx) => (
@@ -183,7 +197,7 @@ export default function BibliotecaPage() {
                 </div>
                 <p className="text-xs text-gray-600">Criado por {selectedSession.educador.nome} | Atualizado em {new Date(selectedSession.updatedAt).toLocaleDateString('pt-BR')}</p>
               </div>
-              <ScrollArea className="flex-1 p-8 prose prose-stone max-w-none prose-headings:text-[#2A4B3A] prose-h2:border-b-2 prose-h2:pb-2">
+              <ScrollArea className="flex-1 p-6 md:p-8 prose prose-stone max-w-none prose-headings:text-[#2A4B3A] prose-h2:border-b-2 prose-h2:pb-2">
                 {selectedSession.finalContent?.content ? (
                   <ReactMarkdown>{selectedSession.finalContent.content}</ReactMarkdown>
                 ) : (
@@ -192,7 +206,13 @@ export default function BibliotecaPage() {
               </ScrollArea>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6">
+              <button 
+                onClick={() => setActiveMobileView('list')}
+                className="md:hidden mb-4 text-xs font-semibold text-[#2A4B3A] flex items-center gap-1 bg-white/50 px-2.5 py-1 rounded-lg border border-[#cbe1d3]"
+              >
+                ← Voltar para a lista
+              </button>
               <p>Selecione uma vivência na lista para ler os detalhes.</p>
             </div>
           )}

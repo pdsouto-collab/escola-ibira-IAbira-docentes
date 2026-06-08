@@ -16,6 +16,7 @@ export default function EducatorPortal() {
   const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
   const [savedSessions, setSavedSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<"chat" | "editor">("chat");
 
   const { messages, setMessages, input, setInput, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: "/api/chat",
@@ -455,9 +456,35 @@ export default function EducatorPortal() {
   };
 
   return (
-    <div className="flex h-screen bg-[#fcfaf7] font-sans relative">
+    <div className="flex flex-col md:flex-row h-screen bg-[#fcfaf7] font-sans relative overflow-hidden">
+      {/* Barra de abas mobile */}
+      <div className="flex md:hidden border-b border-[#e3d8c8] bg-white w-full sticky top-0 z-30 shrink-0">
+        <button
+          onClick={() => setActiveMobileTab("chat")}
+          className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
+            activeMobileTab === "chat" 
+              ? "border-[#8fb39c] text-[#4a5d4e] bg-[#faf8f4]/50" 
+              : "border-transparent text-gray-400"
+          }`}
+        >
+          O Escutador
+        </button>
+        <button
+          onClick={() => setActiveMobileTab("editor")}
+          className={`flex-1 py-3 text-center text-xs font-semibold border-b-2 transition-all ${
+            activeMobileTab === "editor" 
+              ? "border-[#8fb39c] text-[#4a5d4e] bg-[#faf8f4]/50" 
+              : "border-transparent text-gray-400"
+          }`}
+        >
+          Plano de Vivência
+        </button>
+      </div>
+
       {/* LADO ESQUERDO: O ESCUTADOR (Chat) */}
-      <div className="w-1/3 flex flex-col border-r border-[#e3d8c8] bg-white shadow-sm">
+      <div className={`w-full md:w-1/3 flex-col border-r border-[#e3d8c8] bg-white shadow-sm ${
+        activeMobileTab === "chat" ? "flex h-[calc(100vh-50px)] md:h-screen" : "hidden md:flex"
+      }`}>
         <div className="p-6 border-b border-[#e3d8c8] flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#8fb39c] flex items-center justify-center text-white">
             <Leaf size={20} />
@@ -601,8 +628,10 @@ export default function EducatorPortal() {
       </div>
 
       {/* LADO DIREITO: EDITOR RICO (O Criador & Revisor) */}
-      <div className="w-2/3 flex flex-col bg-[#fcfaf7]">
-        <div className="p-6 border-b border-[#e3d8c8] flex justify-between items-center bg-white shadow-sm">
+      <div className={`w-full md:w-2/3 flex-col bg-[#fcfaf7] ${
+        activeMobileTab === "editor" ? "flex h-[calc(100vh-50px)] md:h-screen" : "hidden md:flex"
+      }`}>
+        <div className="p-4 md:p-6 border-b border-[#e3d8c8] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white shadow-sm shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[#e8a375] flex items-center justify-center text-white">
               <BookOpen size={20} />
@@ -655,7 +684,7 @@ export default function EducatorPortal() {
           </div>
         </div>
 
-        <div className="flex-1 p-12 overflow-y-auto">
+        <div className="flex-1 p-4 md:p-12 overflow-y-auto">
           {orchestratorError && (
             <div className="max-w-3xl mx-auto bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 mb-6 shadow-sm">
               <h4 className="font-bold text-sm mb-1">Não foi possível gerar a proposta</h4>
@@ -811,7 +840,7 @@ export default function EducatorPortal() {
               </div>
 
               {/* Documento Markdown */}
-              <div className="bg-white p-12 rounded-xl shadow-sm border border-[#e3d8c8] min-h-full">
+              <div className="bg-white p-6 md:p-12 rounded-xl shadow-sm border border-[#e3d8c8] min-h-full">
                 {/* Se o educador quiser editar, um Textarea rico pode ser integrado aqui (ex: TipTap). Para mock, usamos react-markdown no view. */}
                 <div className="prose prose-stone max-w-none prose-headings:text-[#4a5d4e] prose-h2:border-b-2 prose-h2:border-[#f2efe9] prose-h2:pb-2 prose-p:text-gray-700 prose-li:text-gray-700">
                   <ReactMarkdown>{finalContent}</ReactMarkdown>
