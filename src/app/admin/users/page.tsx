@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, Edit3, Trash2, Shield, ArrowLeft, Loader2, Plus, Mail, Lock, UserCheck, X } from "lucide-react";
+import { UserPlus, Edit3, Trash2, Shield, ArrowLeft, Loader2, Plus, Mail, Lock, UserCheck, X, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import UserMenu from "@/components/UserMenu";
@@ -19,6 +19,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Create Modal State
   const [createOpen, setCreateOpen] = useState(false);
@@ -192,12 +193,30 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div className="flex h-screen bg-[#f2efe9] font-sans">
+    <div className="flex h-screen bg-[#f2efe9] font-sans relative overflow-hidden">
+      {/* OVERLAY BACKDROP FOR MOBILE SIDEBAR */}
+      {mobileMenuOpen && (
+        <div 
+          onClick={() => setMobileMenuOpen(false)} 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 md:hidden animate-in fade-in duration-200"
+        />
+      )}
+
       {/* SIDEBAR */}
-      <div className="w-64 bg-[#4a5d4e] text-white flex flex-col p-6 shadow-xl z-10">
-        <div className="mb-10 font-bold text-xl tracking-tight text-[#e8a375]">
-          Escola Ibirá
-          <span className="block text-sm font-normal text-[#8fb39c]">Painel de Controle</span>
+      <div className={`fixed inset-y-0 left-0 bg-[#4a5d4e] text-white flex flex-col p-6 shadow-xl z-40 shrink-0 transition-transform duration-300 md:relative md:translate-x-0 w-64 ${
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        <div className="mb-10 font-bold text-xl tracking-tight text-[#e8a375] flex justify-between items-center">
+          <div>
+            Escola Ibirá
+            <span className="block text-sm font-normal text-[#8fb39c]">Painel de Controle</span>
+          </div>
+          <button 
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden text-white/70 hover:text-white p-1 hover:bg-white/10 rounded-lg"
+          >
+            <X size={20} />
+          </button>
         </div>
         <nav className="flex flex-col gap-2">
           <div className="p-3 bg-[#394a3d] rounded-lg text-sm font-medium flex items-center justify-between">
@@ -206,10 +225,10 @@ export default function AdminUsersPage() {
               {users.length}
             </span>
           </div>
-          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => window.location.href = '/'}>
+          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => { window.location.href = '/'; setMobileMenuOpen(false); }}>
             Portal do Educador
           </div>
-          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => window.location.href = '/diretoria'}>
+          <div className="p-3 hover:bg-[#394a3d] rounded-lg text-sm cursor-pointer opacity-70" onClick={() => { window.location.href = '/diretoria'; setMobileMenuOpen(false); }}>
             Portal da Diretoria
           </div>
         </nav>
@@ -217,27 +236,33 @@ export default function AdminUsersPage() {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-[#2A4B3A]">Administração de Usuários</h1>
+        <header className="bg-white border-b p-4 flex justify-between items-center shadow-sm gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-[#2A4B3A] hover:bg-black/5 rounded-lg shrink-0"
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className="text-lg md:text-2xl font-bold text-[#2A4B3A] truncate">Administração de Usuários</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
-              className="bg-[#e8a375] hover:bg-[#d49164] text-white flex items-center gap-1.5 shadow-sm transition-all"
+              className="bg-[#e8a375] hover:bg-[#d49164] text-white flex items-center gap-1.5 shadow-sm transition-all text-xs h-9 px-3"
               onClick={() => setCreateOpen(true)}
             >
-              <UserPlus size={16} /> Novo Usuário
+              <UserPlus size={14} /> <span className="hidden sm:inline">Novo Usuário</span>
             </Button>
             <UserMenu />
           </div>
         </header>
 
-        <main className="flex-1 p-10 overflow-y-auto max-w-6xl mx-auto w-full">
+        <main className="flex-1 p-4 md:p-10 overflow-y-auto max-w-6xl mx-auto w-full">
           <div className="bg-white rounded-2xl shadow-sm border border-[#e3d8c8] overflow-hidden flex flex-col">
             
             {/* Filtro e Busca */}
-            <div className="p-6 border-b border-[#f2efe9] bg-[#fcfaf7] flex justify-between items-center gap-4">
-              <div className="w-72">
+            <div className="p-4 md:p-6 border-b border-[#f2efe9] bg-[#fcfaf7] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="w-full sm:w-72">
                 <Input
                   type="text"
                   placeholder="Pesquisar usuários..."
